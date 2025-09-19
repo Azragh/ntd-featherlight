@@ -58,15 +58,16 @@ function wp_featherlight() {
  */
 register_activation_hook( __FILE__, array( wp_featherlight(), 'activate' ) );
 
-// Activate GitHub updates (PUC)
-require_once __DIR__.'/lib/plugin-update-checker/plugin-update-checker.php';
+// GitHub-Updates (PUC)
+require_once __DIR__ . '/lib/plugin-update-checker/plugin-update-checker.php';
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
-$updateChecker = PucFactory::buildUpdateChecker(
-  'https://github.com/Azragh/ntd-featherlight', 
-  __FILE__,                                           
-  'wp-featherlight'                                  
+$ntd_featherlight_upd = PucFactory::buildUpdateChecker(
+  'https://github.com/Azragh/ntd-featherlight',
+  __FILE__,
+  'wp-featherlight'
 );
 
-$updateChecker->setBranch('main');   // or 'stable'
-// $updateChecker->getVcsApi()->enableReleaseAssets(); // Release-ZIPs
+// If using GitHub Releases:
+$ntd_featherlight_upd->setBranch('main');
+$ntd_featherlight_upd->getVcsApi()->enableReleaseAssets();
