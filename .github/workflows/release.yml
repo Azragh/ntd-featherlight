@@ -42,7 +42,14 @@ jobs:
             --exclude ".vscode" \
             --exclude "node_modules" \
             --exclude "*.zip"
-
+            
+      - name: Vendor Plugin Update Checker (PUC)
+        run: |
+          set -e
+          mkdir -p dist/wp-featherlight/lib
+          git clone --depth=1 https://github.com/YahnisElsts/plugin-update-checker.git dist/wp-featherlight/lib/plugin-update-checker
+          rm -rf dist/wp-featherlight/lib/plugin-update-checker/.git
+          
       - name: Create ZIP
         run: |
           cd dist
