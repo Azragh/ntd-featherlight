@@ -1,0 +1,43 @@
+name: Build & Attach WordPress Plugin ZIP
+
+on:
+  push:
+    tags:
+      - 'v*'          # läuft, wenn du einen Tag wie v1.3.5-ntd.1 pushst
+  release:
+    types: [published] # läuft, wenn du im UI ein Release veröffentlichst
+
+jobs:
+  build-zip:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare package folder
+        run: |
+          set -e
+          PLUGIN_SLUG="wp-featherlight"
+          mkdir -p package/${PLUGIN_SLUG}
+          rsync -a ./ package/${PLUGIN_SLUG} \
+            --exclude ".git*" \
+            --exclude ".github" \
+            --exclude ".vscode" \
+            --exclude "node_modules" \
+            --exclude "*.zip"
+
+      - name: Create ZIP
+        run: |
+          cd package
+          zip -r ../wp-featherlight.zip wp-featherlight
+
+      - name: Attach ZIP to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: wp-featherlight.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
