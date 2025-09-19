@@ -1,18 +1,19 @@
 <?php
 /**
  * Plugin Name:  WP Featherlight
- * Plugin URI:   https://wpfeatherlight.cipherdevelopment.com
- * Description:  An ultra lightweight jQuery lightbox for WordPress images and galleries.
+ * Plugin URI:   https://github.com/Azragh/ntd-featherlight
+ * Description:  An ultra lightweight jQuery lightbox for WordPress images and galleries. (NTD fork with PHP 8.2+ fixes)
  * Version:      1.3.5
- * Author:       Cipher / Daniel Geiser
- * Author URI:   https://cipherdevelopment.com
+ * Author:       Cipher / Daniel Geiser (NTD fork)
+ * Author URI:   https://www.new-time.ch/
  * License:      GPL-2.0+
- * License URI:  http://www.gnu.org/licenses/gpl-2.0.html
+ * License URI:  https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:  wp-featherlight
  * Domain Path:  /languages
+ * Update URI:   https://github.com/Azragh/ntd-featherlight
  *
  * @package   WPFeatherlight
- * @copyright Copyright (c) 2018, Cipher Development, LLC
+ * @copyright Copyright (c) 2018, Cipher Development
  * @license   GPL-2.0+
  * @since     0.1.0
  */
@@ -56,3 +57,17 @@ function wp_featherlight() {
  * @return void
  */
 register_activation_hook( __FILE__, array( wp_featherlight(), 'activate' ) );
+
+// Activate GitHub updates (PUC)
+require_once __DIR__.'/lib/plugin-update-checker/plugin-update-checker.php';
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+$updateChecker = PucFactory::buildUpdateChecker(
+  'https://github.com/Azragh/ntd-featherlight', 
+  __FILE__,                                           
+  'wp-featherlight'                                  
+);
+
+// Branch/Tags konfigurieren:
+$updateChecker->setBranch('main');            // oder 'stable', wie du möchtest
+$updateChecker->getVcsApi()->enableReleaseAssets(); // wenn du Release-ZIPs nutzt
