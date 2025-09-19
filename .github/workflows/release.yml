@@ -3,9 +3,12 @@ name: Build & Attach WordPress Plugin ZIP
 on:
   push:
     tags:
-      - 'v*'          # läuft, wenn du einen Tag wie v1.3.5-ntd.1 pushst
+      - 'v*'                 # läuft bei Tag-Push (z.B. v1.3.5-ntd.1)
   release:
-    types: [published] # läuft, wenn du im UI ein Release veröffentlichst
+    types: [published]       # läuft bei "Publish release" im UI
+
+permissions:
+  contents: write            # nötig, um Assets ans Release zu hängen
 
 jobs:
   build-zip:
@@ -17,12 +20,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Detect plugin source dir
+        id: src
+        run: |
+          if [ -f "wp-featherlight/wp-featherlight.php" ]; then
+            echo "dir=wp-featherlight" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=." >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Prepare package folder
         run: |
           set -e
           PLUGIN_SLUG="wp-featherlight"
-          mkdir -p package/${PLUGIN_SLUG}
-          rsync -a ./ package/${PLUGIN_SLUG} \
+          SRC="${{ steps.src.outputs.dir }}"
+          mkdir -p dist/${PLUGIN_SLUG}
+          rsync -a "${SRC}/" "dist/${PLUGIN_SLUG}/" \
+            --delete \
             --exclude ".git*" \
             --exclude ".github" \
             --exclude ".vscode" \
@@ -31,8 +45,8 @@ jobs:
 
       - name: Create ZIP
         run: |
-          cd package
-          zip -r ../wp-featherlight.zip wp-featherlight
+          cd dist
+          zip -r "../wp-featherlight.zip" "wp-featherlight"
 
       - name: Attach ZIP to Release
         uses: softprops/action-gh-release@v2
