@@ -68,6 +68,5 @@ $updateChecker = PucFactory::buildUpdateChecker(
   'wp-featherlight'                                  
 );
 
-// Branch/Tags konfigurieren:
-$updateChecker->setBranch('main');            // oder 'stable', wie du möchtest
-$updateChecker->getVcsApi()->enableReleaseAssets(); // wenn du Release-ZIPs nutzt
+$updateChecker->setBranch('main');   // or 'stable'
+// $updateChecker->getVcsApi()->enableReleaseAssets(); // Release-ZIPs
