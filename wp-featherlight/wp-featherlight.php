@@ -3,7 +3,7 @@
  * Plugin Name:  WP Featherlight
  * Plugin URI:   https://github.com/Azragh/ntd-featherlight
  * Description:  An ultra lightweight jQuery lightbox for WordPress images and galleries. (NTD fork with PHP 8.2+ fixes)
- * Version:      1.3.6
+ * Version:      1.3.7
  * Author:       Cipher / Daniel Geiser (NTD fork)
  * Author URI:   https://www.new-time.ch/
  * License:      GPL-2.0+
