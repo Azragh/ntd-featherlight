@@ -178,7 +178,7 @@
 	}
 
 	/* document wide key handler */
-	var eventMap = { keyup: 'onKeyUp', resize: 'onResize' };
+	var eventMap = { keyup: 'onKeyUp', keydown: 'onKeyDown', resize: 'onResize' };
 
 	var globalEventHandler = function(event) {
 		$.each(Featherlight.opened().reverse(), function() {
@@ -226,6 +226,7 @@
 		afterContent:   $.noop,                /* Called after content is ready and has been set. Gets event as parameter, this contains all data */
 		afterClose:     $.noop,                /* Called after close. Gets event as parameter, this contains all data */
 		onKeyUp:        $.noop,                /* Called on key up for the frontmost featherlight */
+		onKeyDown:      $.noop,                /* Called on key down for the frontmost featherlight */
 		onResize:       $.noop,                /* Called after new content and when a window is resized */
 		type:           null,                  /* Specify type of lightbox. If unset, it will check for the targetAttrs value. */
 		contentFilters: ['jquery', 'image', 'html', 'ajax', 'iframe', 'text'], /* List of content filters to use to determine the content */
@@ -584,9 +585,8 @@
 				} else if(fl.persist !== false) {
 					$target.data('featherlight-persisted', fl);
 				}
-				if (elemConfig.$currentTarget.blur) {
-					elemConfig.$currentTarget.blur(); // Otherwise 'enter' key might trigger the dialog again
-				}
+				// ntd: no blur here, beforeOpen remembers the trigger for focus restore
+				// and blurs it right after (so 'enter' can't trigger the dialog again)
 				fl.open(event);
 			};
 
@@ -647,6 +647,29 @@
 		   Private to Featherlight.
 		*/
 		_callbackChain: {
+			// ntd: keep tab focus inside the frontmost lightbox
+			// -> steps back while another modal (e.g. a cookie banner) is open,
+			//    two focus traps would just pass the focus back and forth
+			onKeyDown: function(_super, event){
+				if('Tab' === event.key && this === Featherlight.current() && !$('[aria-modal="true"]:visible').length) {
+					var $items = this.$instance.find('a[href], button, input:not([type="hidden"]), select, textarea, summary, iframe, [contentEditable=true], [tabindex]')
+						.not('[tabindex="-1"], :disabled').filter(':visible');
+					if ($items.length) {
+						var active = document.activeElement,
+							inside = $.contains(this.$instance[0], active);
+						if (event.shiftKey && (!inside || active === $items[0])) {
+							$items.last().focus();
+							return false;
+						}
+						if (!event.shiftKey && (!inside || active === $items[$items.length - 1])) {
+							$items.first().focus();
+							return false;
+						}
+					}
+				}
+				return _super(event);
+			},
+
 			onKeyUp: function(_super, event){
 				if(27 === event.keyCode) {
 					if (this.closeOnEsc) {
@@ -667,16 +690,24 @@
 
 				// Disable tabbing:
 				// See http://stackoverflow.com/questions/1599660/which-html-elements-can-receive-focus
-				this._$previouslyTabbable = $("a, input, select, textarea, iframe, button, iframe, [contentEditable=true]")
-					.not('[tabindex]')
-					.not(this.$instance.find('button'));
+				// ntd: leave other open modals (e.g. a cookie banner) usable
+				var $otherModals = $('[aria-modal="true"]:visible').find('*');
 
-				this._$previouslyWithTabIndex = $('[tabindex]').not('[tabindex="-1"]');
+				this._$previouslyTabbable = $("a, input, select, textarea, iframe, button, summary, [contentEditable=true]")
+					.not('[tabindex]')
+					.not(this.$instance.find('button'))
+					.not($otherModals);
+
+				this._$previouslyWithTabIndex = $('[tabindex]').not('[tabindex="-1"]').not($otherModals);
 				this._previousWithTabIndices = this._$previouslyWithTabIndex.map(function(_i, elem) {
 					return $(elem).attr('tabindex');
 				});
 
-				this._$previouslyWithTabIndex.add(this._$previouslyTabbable).attr('tabindex', -1);
+				// ntd: remember the original tabindex on the element, so clones of
+				// disabled elements (selector content) can get it back in afterContent
+				this._$previouslyWithTabIndex.add(this._$previouslyTabbable).each(function() {
+					$(this).attr('data-featherlight-tabindex', $(this).attr('tabindex') || '');
+				}).attr('tabindex', -1);
 
 				if (document.activeElement.blur) {
 					document.activeElement.blur();
@@ -692,6 +723,7 @@
 				this._$previouslyWithTabIndex.each(function(i, elem) {
 					$(elem).attr('tabindex', self._previousWithTabIndices[i]);
 				});
+				this._$previouslyWithTabIndex.add(this._$previouslyTabbable).removeAttr('data-featherlight-tabindex');
 				this._previouslyActive.focus();
 				// Restore scroll
 				if(Featherlight.opened().length === 0) {
@@ -707,6 +739,16 @@
 
 			afterContent: function(_super, event){
 				var r = _super(event);
+				// ntd: content inside the lightbox gets its tabindex back
+				this.$instance.find('[data-featherlight-tabindex]').each(function() {
+					var $el = $(this), tabindex = $el.attr('data-featherlight-tabindex');
+					if (tabindex) {
+						$el.attr('tabindex', tabindex);
+					} else {
+						$el.removeAttr('tabindex');
+					}
+					$el.removeAttr('data-featherlight-tabindex');
+				});
 				this.$instance.find('[autofocus]:not([disabled])').focus();
 				this.onResize(event);
 				return r;

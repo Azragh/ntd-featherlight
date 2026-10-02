@@ -1,3 +1,12 @@
+## 1.3.8
+Keyboard accessibility fixes for the lightbox.
+
+- Fix: Restore focus to the trigger on close (it was blurred before Featherlight remembered it, so focus fell back to `<body>`)
+- Fix: Content cloned into the lightbox (selector content) is tabbable again
+- Fix: Keep tab focus inside the open lightbox (wraps around instead of leaving for the page or the browser ui)
+- Fix: Also disable `<summary>` elements on the page while a lightbox is open
+- Fix: Bump script version so browsers load the updated files
+
 ## 1.3.4
 This is a maintenance release.
 
